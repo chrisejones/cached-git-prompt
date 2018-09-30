@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+set -e
+
+# Extract -C option to detect when git has been invoked in a different working
+# directory
+seen_chdir_option=0
+chdir_value="."
+for opt in "$@"; do
+  if [[ $seen_chdir_option = true ]]; then
+    chdir_value="$opt"
+    break
+  elif [[ $opt == "-C" ]]; then
+    seen_chdir_option=true
+  fi
+done
+
+git "$@"
+result=$?
+
+# \u2191 up arrow
+SYMBOL_GIT_PUSH=$'\xe2\x86\x91'
+
+# \u2193 down arrow
+SYMBOL_GIT_PULL=$'\xe2\x86\x93'
+
+# Return early if git not found
+hash git 2>/dev/null || return
+
+# Make git output US english for consistency
+git_eng="env LANG=C git"
+
+while IFS= read -r line; do
+  if [[ $line =~ ^## ]]; then # header line
+    if [[ $line =~ ^##\ (.*)\.\.\. ]]; then
+      ref="${BASH_REMATCH[1]}"
+    elif [[ $line =~ ^##\ No\ commits\ yet\ on\ (.+) ]]; then
+      ref="${BASH_REMATCH[1]}"
+    else
+      [[ $line =~ ^##\ ([^ ]+) ]] && ref="${BASH_REMATCH[1]}"
+    fi
+    [[ $line =~ ahead\ ([0-9]+) ]] && marks+=" $SYMBOL_GIT_PUSH${BASH_REMATCH[1]}"
+    [[ $line =~ behind\ ([0-9]+) ]] && marks+=" $SYMBOL_GIT_PULL${BASH_REMATCH[1]}"
+  else # branch is modified if output contains more lines after the header line
+    # We don't do anything about modification as that can change between
+    # invocations of this script.
+    break
+  fi
+done < <($git_eng -C "$chdir_value" status --porcelain --branch -uno 2>/dev/null)
+
+if [[ $ref == "HEAD" ]]; then
+  ref="DETACHED $($git_eng -C "$chdir_value" describe --tags --always 2>/dev/null)"
+fi
+
+toplevel=$($git_eng -C "$chdir_value" rev-parse --show-toplevel)
+echo "$ref$marks" > "$toplevel/.prompt_git_info.txt"
+
+exit $result
