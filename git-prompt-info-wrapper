@@ -7,10 +7,9 @@ generate_prompt_info=true
 # Messy parsing of command line option to resolve the directory that git is
 # about to operate on
 git_subcommand=""
-next_opt_is_chdir_arg=false
+next_opt_is_target_directory=false
 target_directory="."
 skip_next_opt=false
-seen_clone_repository=false
 for opt in "$@"; do
   if [[ "$skip_next_opt" == true ]]; then
     skip_next_opt=false
@@ -42,7 +41,15 @@ for opt in "$@"; do
       -*)
         ;;
       *)
-        if [[ "$seen_clone_repository" == false ]]; then
+        if [[ "$next_opt_is_target_directory" == false ]]; then
+          next_opt_is_target_directory=true
+          echo $opt
+          if [[ "$opt" =~ .*/([^/]*)$ ]]; then
+            target_directory="${BASH_REMATCH[1]}"
+            target_directory=${target_directory%".git"}
+          else
+            generate_prompt_info=false
+          fi
           next_opt_is_target_directory=true
         else
           target_directory="$opt"
