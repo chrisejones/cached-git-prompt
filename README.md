@@ -1,10 +1,10 @@
 # cached-git-prompt
-Git wrapper script for writing information to be displayed in a bash prompt
+Git wrapper script for writing information to be displayed in a Bash prompt
 
 ## Introduction
-Many custom bash prompts shell out to git to populate information about the git repository in the current working directory, but in some environments shelling out to external commands is relatively slow and makes the prompt feel laggy.
+Many custom Bash prompts shell out to Git to populate information about the Git repository in the current working directory, but in some environments shelling out to external commands is relatively slow and makes the prompt feel laggy.
 
-This project takes an alternative approach. We wrap git in a script that works out the repository directory of the executed command and caches information to be rendered in the prompt.
+This project takes an alternative approach. We wrap Git in a script that works out the repository directory of the executed command and caches information to be rendered in the prompt.
 
 ## Usage
 Minimal example of what to add to your .bashrc
@@ -30,7 +30,7 @@ ps1() {
 PROMPT_COMMAND="ps1${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
 ```
 
-We recommend that you add the file that's used to cache git information to a global git ignore list.
+We recommend that you add the file that's used to cache Git information to a global Git ignore list.
 ```bash
 echo ".prompt_git_info.txt" > ~/.gitignore_global
 git config --global core.excludesfile ~/.gitignore_global
