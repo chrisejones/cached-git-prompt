@@ -40,7 +40,6 @@ cached_git_info() {
     return 0
   fi
 
-  echo -n " "
   cat "$prompt_git_info"
   return 0
 }
