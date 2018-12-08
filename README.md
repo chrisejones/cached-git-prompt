@@ -7,7 +7,7 @@ Many custom Bash prompts shell out to Git to populate information about the Git 
 This project takes an alternative approach. We wrap Git in a script that works out the repository directory of the executed command and caches information to be rendered in the prompt.
 
 ## Usage
-Minimal example of what to add to your .bashrc
+Minimal example to add to your `.bashrc`
 
 ```bash
 CACHED_GIT_INFO_DIRECTORY="$HOME/git/cached-git-prompt"
@@ -35,3 +35,14 @@ We recommend that you add the file that's used to cache Git information to a glo
 echo ".prompt_git_info.txt" > ~/.gitignore_global
 git config --global core.excludesfile ~/.gitignore_global
 ```
+
+## Using the Official Git Prompt
+
+By default we use a simple implementation. To use the official
+[Git prompt](https://github.com/git/git/blob/master/contrib/completion/git-prompt.sh), or a custom one:
+```bash
+export CACHED_GIT_INFO_FULL=true
+```
+If `git-prompt.sh` is not in ```/usr/local/etc/bash_completion.d/git-prompt.sh``` or
+```/etc/bash_completion.d/git-prompt.sh``` then set `CACHED_GIT_INFO_GIT_PROMPT_PATH` to its location.
+

@@ -80,29 +80,55 @@ SYMBOL_GIT_PULL=$'\xe2\x86\x93'
 # Make git output US english for consistency
 git_eng="env LANG=C git"
 
-while IFS= read -r line; do
-  if [[ $line =~ ^## ]]; then # header line
-    if [[ $line =~ ^##\ (.*)\.\.\. ]]; then
-      ref="${BASH_REMATCH[1]}"
-    elif [[ $line =~ ^##\ No\ commits\ yet\ on\ (.+) ]]; then
-      ref="${BASH_REMATCH[1]}"
-    else
-      [[ $line =~ ^##\ ([^ ]+) ]] && ref="${BASH_REMATCH[1]}"
-    fi
-    [[ $line =~ ahead\ ([0-9]+) ]] && marks+=" $SYMBOL_GIT_PUSH${BASH_REMATCH[1]}"
-    [[ $line =~ behind\ ([0-9]+) ]] && marks+=" $SYMBOL_GIT_PULL${BASH_REMATCH[1]}"
-  else # branch is modified if output contains more lines after the header line
-    # We don't do anything about modification as that can change between
-    # invocations of this script.
-    break
-  fi
-done < <($git_eng -C "$target_directory" status --porcelain --branch -uno 2>/dev/null)
-
-if [[ $ref == "HEAD" ]]; then
-  ref="DETACHED $($git_eng -C "$target_directory" describe --tags --always 2>/dev/null)"
-fi
-
 toplevel=$($git_eng -C "$target_directory" rev-parse --show-toplevel)
-echo "$ref$marks" > "$toplevel/.prompt_git_info.txt"
+
+get_info_lite()
+{
+  while IFS= read -r line; do
+    if [[ $line =~ ^## ]]; then # header line
+      if [[ $line =~ ^##\ (.*)\.\.\. ]]; then
+        ref="${BASH_REMATCH[1]}"
+      elif [[ $line =~ ^##\ No\ commits\ yet\ on\ (.+) ]]; then
+        ref="${BASH_REMATCH[1]}"
+      else
+        [[ $line =~ ^##\ ([^ ]+) ]] && ref="${BASH_REMATCH[1]}"
+      fi
+      [[ $line =~ ahead\ ([0-9]+) ]] && marks+=" $SYMBOL_GIT_PUSH${BASH_REMATCH[1]}"
+      [[ $line =~ behind\ ([0-9]+) ]] && marks+=" $SYMBOL_GIT_PULL${BASH_REMATCH[1]}"
+    else # branch is modified if output contains more lines after the header line
+      # We don't do anything about modification as that can change between
+      # invocations of this script.
+      break
+    fi
+  done < <($git_eng -C "$target_directory" status --porcelain --branch -uno 2>/dev/null)
+
+  if [[ $ref == "HEAD" ]]; then
+    ref="DETACHED $($git_eng -C "$target_directory" describe --tags --always 2>/dev/null)"
+  fi
+
+  echo "$ref$marks" > "$toplevel/.prompt_git_info.txt"
+}
+
+if [[ $CACHED_GIT_INFO_FULL == true ]]; then
+  if [[ -z $CACHED_GIT_INFO_GIT_PROMPT_PATH ]]; then
+    paths_to_try=(/usr/local/etc/bash_completion.d/git-prompt.sh /etc/bash_completion.d/git-prompt.sh)
+    for p in "${paths_to_try[@]}"; do
+      if [[ -e "$p" ]]; then
+        source "$p"
+        break
+      fi
+    done
+  else
+    source "$CACHED_GIT_INFO_GIT_PROMPT_PATH"
+  fi
+
+  if type __git_ps1 &> /dev/null; then
+    __git_ps1 "%s" > "$toplevel/.prompt_git_info.txt"
+  else
+    echo "Can't find __git_ps1, set CACHED_GIT_INFO_PROMPT_PATH with the location of git-prompt.sh" 2>&1
+  fi
+else
+  get_info_lite
+fi
 
 exit $result
